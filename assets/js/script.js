@@ -162,11 +162,13 @@ const changePlayerInfo = function () {
   playerYear.textContent = musicData[currentMusic].year;
   playerArtist.textContent = musicData[currentMusic].artist;
 
-  audioSource.src = musicData[currentMusic].musicPath;
+  audioSource = playAudio(musicData[currentMusic].musicPath);
+  audioSource.removeEventListener("loadedmetadata", updateDuration);
 
-  audioSource.addEventListener("loadeddata", updateDuration);
-  playMusic();
-}
+  if(audioSource) {  // important to check if the source was loaded.
+	  updateDuration(audioSource); // Use the returned audio object
+		playMusic(); // Play the music after setting the source
+	}
 
 addEventOnElements(playlistItems, "click", changePlayerInfo);
 
@@ -408,3 +410,29 @@ const muteVolume = function () {
 }
 
 playerVolumeBtn.addEventListener("click", muteVolume);
+
+/**
+ * Function to play audio from a URL (using a more robust approach)
+ */
+function playAudio(url) {
+  const audio = new Audio();
+  audio.src = url;
+
+  audio.addEventListener('loadedmetadata', () => {
+		// Check for valid duration and content type
+    if (isNaN(audio.duration)) {
+			console.error('Invalid audio duration:', audio);
+			alert('Error loading audio. Check the URL.');
+			return; // Stop further execution
+		}
+		updateDuration(audio); // Update duration display if metadata is valid
+    audio.play();
+  });
+
+  audio.addEventListener('error', (err) => {
+    console.error('Audio loading error:', err);
+    alert('Error loading audio. Check the URL and network connection.');
+  });
+
+  return audio; // Return the audio object
+}
